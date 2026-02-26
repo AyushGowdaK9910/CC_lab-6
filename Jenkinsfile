@@ -9,6 +9,14 @@ pipeline {
             }
         }
 
+        stage('Cleanup Old Containers') {
+            steps {
+                sh '''
+                docker rm -f backend1 backend2 nginx-lb || true
+                '''
+            }
+        }
+
         stage('Create Network') {
             steps {
                 sh '''
@@ -21,10 +29,9 @@ pipeline {
         stage('Deploy Backends') {
             steps {
                 sh '''
-                docker rm -f backend1 backend2 || true
                 docker run -d --name backend1 --network lab-network backend-app
                 docker run -d --name backend2 --network lab-network backend-app
-                sleep 3
+                sleep 2
                 '''
             }
         }
@@ -32,7 +39,6 @@ pipeline {
         stage('Start Nginx') {
             steps {
                 sh '''
-                docker rm -f nginx-lb || true
                 docker run -d --name nginx-lb --network lab-network -p 80:80 nginx
                 sleep 2
                 docker cp nginx/default.conf nginx-lb:/etc/nginx/conf.d/default.conf
